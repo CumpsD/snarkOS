@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-    <a href="https://circleci.com/gh/AleoHQ/snarkOS"><img src="https://circleci.com/gh/AleoHQ/snarkOS.svg?style=svg&circle-token=6e9ad6d39d95350544f352d34e0e5c62ef54db26"></a>
-    <a href="https://codecov.io/gh/AleoHQ/snarkOS"><img src="https://codecov.io/gh/AleoHQ/snarkOS/branch/master/graph/badge.svg?token=cck8tS9HpO"/></a>
+    <a href="https://circleci.com/gh/CumpsD/snarkOS"><img src="https://circleci.com/gh/CumpsD/snarkOS.svg?style=svg&circle-token=6e9ad6d39d95350544f352d34e0e5c62ef54db26"></a>
+    <a href="https://codecov.io/gh/CumpsD/snarkOS"><img src="https://codecov.io/gh/CumpsD/snarkOS/branch/master/graph/badge.svg?token=cck8tS9HpO"/></a>
     <a href="https://discord.gg/5v2ynrw2ds"><img src="https://img.shields.io/discord/700454073459015690?logo=discord"/></a>
 </p>
 
@@ -47,7 +47,7 @@ Before beginning, please ensure your machine has `Rust v1.56+` installed. Instru
 
 Start by cloning the snarkOS Github repository:
 ```
-git clone https://github.com/AleoHQ/snarkOS.git --depth 1
+git clone https://github.com/CumpsD/snarkOS.git --depth 1
 ```
 
 Next, move into the snarkOS directory:
@@ -75,7 +75,7 @@ Start by following the instructions in the [Build Guide](#2-build-guide).
 
 Next, to generate an Aleo miner address, run:
 ```
-snarkos experimental new_account 
+snarkos experimental new_account
 ```
 or from the snarkOS directory, run:
 ```
@@ -125,13 +125,13 @@ in the snarkOS directory, or `snarkos miner stats aleo1xxxxxxxxxxxxxxxxxxxxxxxxx
 - Ensure ports `4132/tcp` and `3032/tcp` are open on your router and OS firewall.
 - Ensure snarkOS is started using `./run-client.sh` or `./run-miner.sh`.
 
-### 3. I can't generate a new address ### 
+### 3. I can't generate a new address ###
 
-- Before running the command above (`snarkos experimental new_account`) try `source ~/.bashrc` 
+- Before running the command above (`snarkos experimental new_account`) try `source ~/.bashrc`
 - Also double check the spelling of `snarkos`. Note the directory is `/snarkOS`, the command is `snarkos`
 
-### 4. Can I coordinate mining across multiple machines/instances of snarkOS? ### 
- 
+### 4. Can I coordinate mining across multiple machines/instances of snarkOS? ###
+
 - Yes. Just spin up multiple instances of snarkOS across multiple machines (not the same machine) and input
   the same miner address. At the moment, Aleo does not integrate with any other mining pool protocols (like
   [stratum](https://braiins.com/stratum-v2)). But if anyone wants to implement, please apply for a grant!

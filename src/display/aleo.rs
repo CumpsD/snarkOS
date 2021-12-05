@@ -66,7 +66,7 @@ pub fn notification_message<N: Network>(miner: Option<Address<N>>) -> String {
          2. Ensure ports 4132/tcp and 3032/tcp are open on your router and OS firewall.
          3. Ensure your Aleo node is running the `run-client.sh` or `run-miner.sh` script,
             in order to automatically stay up to date on the incentivized testnet.
-         4. File technical issues on Github at https://github.com/AleoHQ/snarkOS/issues/new/choose
+         4. File technical issues on Github at https://github.com/CumpsD/snarkOS/issues/new/choose
          5. Ask questions on Discord at https://discord.gg/5v2ynrw2ds
          6. Please be respectful to all members of the Aleo community.
 
