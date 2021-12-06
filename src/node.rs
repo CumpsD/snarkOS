@@ -134,13 +134,13 @@ impl Node {
                 println!("{}", crate::display::welcome_message());
                 println!("Your Aleo address is {}.\n", miner_address);
                 println!("Starting a mining node on {}.", N::NETWORK_NAME);
-                println!("{}", crate::display::notification_message::<N>(Some(miner_address)));
+                //println!("{}", crate::display::notification_message::<N>(Some(miner_address)));
                 Some(miner_address)
             }
             _ => {
                 println!("{}", crate::display::welcome_message());
                 println!("Starting a client node on {}.", N::NETWORK_NAME);
-                println!("{}", crate::display::notification_message::<N>(None));
+                //println!("{}", crate::display::notification_message::<N>(None));
                 None
             }
         };

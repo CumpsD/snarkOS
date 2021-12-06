@@ -293,7 +293,7 @@ impl<N: Network, E: Environment> Peers<N, E> {
                     if elapsed < E::RADIO_SILENCE_IN_SECS {
                         trace!("Skipping connection request to {} (tried {} secs ago)", peer_ip, elapsed);
                     } else {
-                        debug!("Connecting to {}...", peer_ip);
+                        trace!("Connecting to {}...", peer_ip);
                         // Update the last seen timestamp for this peer.
                         seen_outbound_connections.insert(peer_ip, SystemTime::now());
 
@@ -345,7 +345,7 @@ impl<N: Network, E: Environment> Peers<N, E> {
                         .iter()
                         .filter(|(&peer_ip, _)| {
                             let peer_str = peer_ip.to_string();
-                            !E::SYNC_NODES.contains(&peer_str.as_str()) && !E::BEACON_NODES.contains(&peer_str.as_str())
+                            !E::SYNC_NODES.contains(&peer_str.as_str())
                         })
                         .take(num_excess_peers)
                         .map(|(&peer_ip, _)| peer_ip)
@@ -353,7 +353,7 @@ impl<N: Network, E: Environment> Peers<N, E> {
 
                     // Proceed to send disconnect requests to these peers.
                     for peer_ip in peer_ips_to_disconnect {
-                        info!("Disconnecting from {} (exceeded maximum connections)", peer_ip);
+                        trace!("Disconnecting from {} (exceeded maximum connections)", peer_ip);
                         self.send(peer_ip, Message::Disconnect).await;
                         // Add an entry for this `Peer` in the restricted peers.
                         self.restricted_peers.write().await.insert(peer_ip, Instant::now());
@@ -372,7 +372,7 @@ impl<N: Network, E: Environment> Peers<N, E> {
                         .copied()
                         .choose_multiple(&mut OsRng::default(), num_excess_sync_nodes)
                     {
-                        info!("Disconnecting from {} (exceeded maximum connections)", peer_ip);
+                        trace!("Disconnecting from {} (exceeded maximum connections)", peer_ip);
                         self.send(peer_ip, Message::Disconnect).await;
                         // Add an entry for this `Peer` in the restricted peers.
                         self.restricted_peers.write().await.insert(peer_ip, Instant::now());
@@ -493,7 +493,7 @@ impl<N: Network, E: Environment> Peers<N, E> {
                         // Add an entry for this `Peer` in the restricted peers.
                         self.restricted_peers.write().await.insert(peer_ip, Instant::now());
                     } else {
-                        debug!("Received a connection request from {}", peer_ip);
+                        trace!("Received a connection request from {}", peer_ip);
                         // Update the number of attempts for this peer.
                         *num_attempts += 1;
 
@@ -657,7 +657,7 @@ impl<N: Network, E: Environment> Peers<N, E> {
                     }
                 }
             }
-            None => warn!("Attempted to send to a non-connected peer {}", peer),
+            None => trace!("Attempted to send to a non-connected peer {}", peer),
         }
     }
 
@@ -672,7 +672,7 @@ impl<N: Network, E: Environment> Peers<N, E> {
             .iter()
             .filter(|peer_ip| {
                 let peer_str = peer_ip.to_string();
-                *peer_ip != &sender && !E::SYNC_NODES.contains(&peer_str.as_str()) && !E::BEACON_NODES.contains(&peer_str.as_str())
+                *peer_ip != &sender && !E::SYNC_NODES.contains(&peer_str.as_str())
             })
             .copied()
             .collect::<Vec<_>>()
@@ -992,7 +992,7 @@ impl<N: Network, E: Environment> Peer<N, E> {
 
             // Retrieve the peer IP.
             let peer_ip = peer.peer_ip();
-            info!("Connected to {}", peer_ip);
+            trace!("Connected to {}", peer_ip);
 
             // Process incoming messages until this stream is disconnected.
             loop {
@@ -1001,7 +1001,7 @@ impl<N: Network, E: Environment> Peer<N, E> {
                     Some(message) = peer.outbound_handler.recv() => {
                         // Disconnect if the peer has not communicated back within the predefined time.
                         if peer.last_seen.elapsed() > Duration::from_secs(E::RADIO_SILENCE_IN_SECS) {
-                            warn!("Peer {} has not communicated in {} seconds", peer_ip, peer.last_seen.elapsed().as_secs());
+                            trace!("Peer {} has not communicated in {} seconds", peer_ip, peer.last_seen.elapsed().as_secs());
                             break;
                         } else {
                             // Route a message to the peer.
@@ -1017,7 +1017,7 @@ impl<N: Network, E: Environment> Peer<N, E> {
                             match peer.last_seen.elapsed() > Duration::from_secs(E::RADIO_SILENCE_IN_SECS) {
                                 true => {
                                     let last_seen = peer.last_seen.elapsed().as_secs();
-                                    warn!("Failed to receive a message from {} in {} seconds", peer_ip, last_seen);
+                                    trace!("Failed to receive a message from {} in {} seconds", peer_ip, last_seen);
                                     break;
                                 },
                                 false => {
@@ -1173,7 +1173,7 @@ impl<N: Network, E: Environment> Peer<N, E> {
                                     // Drop the peer, if they have sent more than 5 unconfirmed blocks in the last 5 seconds.
                                     let frequency = peer.seen_inbound_blocks.values().filter(|t| t.elapsed().unwrap().as_secs() <= 5).count();
                                     if frequency >= 5 {
-                                        warn!("Dropping {} for spamming unconfirmed blocks (frequency = {})", peer_ip, frequency);
+                                        trace!("Dropping {} for spamming unconfirmed blocks (frequency = {})", peer_ip, frequency);
                                         // Send a `PeerRestricted` message.
                                         if let Err(error) = peers_router.send(PeersRequest::PeerRestricted(peer_ip)).await {
                                             warn!("[PeerRestricted] {}", error);
@@ -1200,7 +1200,7 @@ impl<N: Network, E: Environment> Peer<N, E> {
                                     let is_node_ready = !local_status.is_peering();
 
                                     // If this node is a beacon or sync node, skip this message, after updating the timestamp.
-                                    if E::NODE_TYPE == NodeType::Beacon || E::NODE_TYPE == NodeType::Sync || !is_router_ready || !is_within_range || !is_node_ready {
+                                    if E::NODE_TYPE == NodeType::Sync || !is_router_ready || !is_within_range || !is_node_ready {
                                         trace!("Skipping 'UnconfirmedBlock {}' from {}", block_height, peer_ip)
                                     } else {
                                         // Perform the deferred non-blocking deserialization of the block.
@@ -1245,7 +1245,7 @@ impl<N: Network, E: Environment> Peer<N, E> {
                                     let is_node_ready = !local_status.is_peering();
 
                                     // If this node is a beacon or sync node, skip this message, after updating the timestamp.
-                                    if E::NODE_TYPE == NodeType::Beacon || E::NODE_TYPE == NodeType::Sync || !is_router_ready || !is_node_ready {
+                                    if E::NODE_TYPE == NodeType::Sync || !is_router_ready || !is_node_ready {
                                         trace!("Skipping 'UnconfirmedTransaction {}' from {}", transaction.transaction_id(), peer_ip);
                                     } else {
                                         // Route the `UnconfirmedTransaction` to the prover.
