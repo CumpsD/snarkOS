@@ -737,7 +737,7 @@ impl<N: Network, E: Environment> Ledger<N, E> {
                     // If the common ancestor matches the latest block height of the peer,
                     // the peer is clearly on the same canonical chain as this node.
                     true => Some(false),
-                    false => None,
+                    false => Some(true),
                 },
             };
 
@@ -748,7 +748,7 @@ impl<N: Network, E: Environment> Ledger<N, E> {
                     // If the common ancestor matches the latest block height of this node,
                     // the peer is likely on the same canonical chain as this node.
                     true => Some(false),
-                    false => None,
+                    false => Some(true),
                 },
             };
 
