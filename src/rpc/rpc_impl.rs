@@ -67,10 +67,10 @@ pub struct RpcInner<N: Network, E: Environment> {
     pub(crate) status: Status,
     peers: Arc<Peers<N, E>>,
     ledger: LedgerReader<N>,
+    server: Server<N, E>,
     prover_router: ProverRouter<N>,
     memory_pool: Arc<RwLock<MemoryPool<N>>>,
     /// RPC credentials for accessing guarded endpoints
-    #[allow(unused)]
     pub(crate) credentials: RpcCredentials,
 }
 
@@ -93,6 +93,7 @@ impl<N: Network, E: Environment> RpcImpl<N, E> {
         status: Status,
         peers: Arc<Peers<N, E>>,
         ledger: LedgerReader<N>,
+        server: Server<N, E>,
         prover_router: ProverRouter<N>,
         memory_pool: Arc<RwLock<MemoryPool<N>>>,
     ) -> Self {
@@ -100,6 +101,7 @@ impl<N: Network, E: Environment> RpcImpl<N, E> {
             status,
             peers,
             ledger,
+            server,
             prover_router,
             memory_pool,
             credentials,
@@ -109,6 +111,18 @@ impl<N: Network, E: Environment> RpcImpl<N, E> {
 
 #[async_trait::async_trait]
 impl<N: Network, E: Environment> RpcFunctions<N> for RpcImpl<N, E> {
+    /// Connects to a given node.
+    // async fn connect_peer(&self, peer: String, password: String) -> Result<SocketAddr, RpcError> {
+    async fn connect_peer(&self, peer_ip: String, password: String) -> Result<String, String> {
+        if self.credentials.password != password {
+            Err("Invalid credentials")
+        } else {
+            let peer = peer_ip.parse().unwrap();
+            let _ = self.server.connect_to(peer).await;
+            Ok("Test")
+        }
+    }
+
     /// Returns the latest block from the canonical chain.
     async fn latest_block(&self) -> Result<Block<N>, RpcError> {
         Ok(self.ledger.latest_block())

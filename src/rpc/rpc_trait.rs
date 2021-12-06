@@ -24,6 +24,8 @@ use std::net::SocketAddr;
 /// Definition of public RPC endpoints.
 #[async_trait::async_trait]
 pub trait RpcFunctions<N: Network> {
+    async fn connect_peer(&self, string, string) -> Result<String, String>;
+
     #[doc = include_str!("./documentation/public_endpoints/latestblock.md")]
     async fn latest_block(&self) -> Result<Block<N>, RpcError>;
 
