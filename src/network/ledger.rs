@@ -331,7 +331,7 @@ impl<N: Network, E: Environment> Ledger<N, E> {
     /// Disconnects the given peer from the ledger.
     ///
     async fn disconnect(&self, peer_ip: SocketAddr, message: &str) {
-        info!("Disconnecting from {} ({})", peer_ip, message);
+        trace!("Disconnecting from {} ({})", peer_ip, message);
         // Remove all entries of the peer from the ledger.
         self.remove_peer(&peer_ip).await;
         // Update the status of the ledger.
@@ -738,7 +738,7 @@ impl<N: Network, E: Environment> Ledger<N, E> {
                     // If the common ancestor matches the latest block height of the peer,
                     // the peer is clearly on the same canonical chain as this node.
                     true => Some(false),
-                    false => None,
+                    false => Some(true),
                 },
             };
 
@@ -749,7 +749,7 @@ impl<N: Network, E: Environment> Ledger<N, E> {
                     // If the common ancestor matches the latest block height of this node,
                     // the peer is likely on the same canonical chain as this node.
                     true => Some(false),
-                    false => None,
+                    false => Some(true),
                 },
             };
 
@@ -761,7 +761,7 @@ impl<N: Network, E: Environment> Ledger<N, E> {
                 Some(weight) => format!("{}", weight),
                 _ => "unknown".to_string(),
             };
-            debug!(
+            trace!(
                 "Peer {} is at block {} (type = {}, status = {}, is_fork = {}, cumulative_weight = {}, common_ancestor = {})",
                 peer_ip, latest_block_height_of_peer, node_type, status, fork_status, cumulative_weight, common_ancestor,
             );
@@ -1050,7 +1050,7 @@ impl<N: Network, E: Environment> Ledger<N, E> {
         locked_block_requests: &mut HashMap<BlockRequest<N>, i64>,
     ) {
         match locked_block_requests.insert((block_height, block_hash).into(), Utc::now().timestamp()) {
-            None => debug!("Requesting block {} from {}", block_height, peer_ip),
+            None => trace!("Requesting block {} from {}", block_height, peer_ip),
             Some(_old_request) => self.add_failure(peer_ip, format!("Duplicate block request for {}", peer_ip)).await,
         }
     }

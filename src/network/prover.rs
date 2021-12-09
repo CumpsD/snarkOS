@@ -185,7 +185,7 @@ impl<N: Network, E: Environment> Prover<N, E> {
 
                                 match result {
                                     Ok(Ok((block, coinbase_record))) => {
-                                        debug!("Miner has found unconfirmed block {} ({})", block.height(), block.hash());
+                                        info!("Miner has found unconfirmed block {} ({})", block.height(), block.hash());
                                         // Store the coinbase record.
                                         if let Err(error) = state.add_coinbase_record(block.height(), coinbase_record) {
                                             warn!("[Miner] Failed to store coinbase record - {}", error);
