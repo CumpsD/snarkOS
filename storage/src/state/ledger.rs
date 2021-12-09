@@ -38,9 +38,6 @@ use std::{
     thread::JoinHandle,
 };
 
-/// The number of seconds in two hours.
-const TWO_HOURS_UNIX: i64 = 7200;
-
 /// The maximum number of linear block locators.
 pub const MAXIMUM_LINEAR_BLOCK_LOCATORS: u32 = 64;
 /// The maximum number of quadratic block locators.
@@ -50,6 +47,9 @@ pub const MAXIMUM_BLOCK_LOCATORS: u32 = MAXIMUM_LINEAR_BLOCK_LOCATORS.saturating
 
 /// TODO (howardwu): Reconcile this with the equivalent in `Environment`.
 const MAXIMUM_FORK_DEPTH: u32 = 4096;
+
+/// The maximum future block time - 2 minutes.
+const MAXIMUM_FUTURE_BLOCK_TIME: i64 = 120;
 
 ///
 /// A helper struct containing transaction metadata.
@@ -587,7 +587,10 @@ impl<N: Network> LedgerState<N> {
         // Compute the block difficulty target.
         let previous_timestamp = self.latest_block_timestamp();
         let previous_difficulty_target = self.latest_block_difficulty_target();
-        let block_timestamp = chrono::Utc::now().timestamp();
+
+        // Ensure that the new timestamp is ahead of the previous timestamp.
+        let block_timestamp = std::cmp::max(chrono::Utc::now().timestamp(), previous_timestamp.saturating_add(1));
+
         let difficulty_target = Blocks::<N>::compute_difficulty_target(previous_timestamp, previous_difficulty_target, block_timestamp);
         let cumulative_weight = self
             .latest_cumulative_weight()
@@ -689,7 +692,7 @@ impl<N: Network> LedgerState<N> {
 
         // Ensure the next block timestamp is within the declared time limit.
         let now = chrono::Utc::now().timestamp();
-        if block.timestamp() > (now + TWO_HOURS_UNIX) {
+        if block.timestamp() > (now + MAXIMUM_FUTURE_BLOCK_TIME) {
             return Err(anyhow!("The given block timestamp exceeds the time limit"));
         }
 
@@ -1079,6 +1082,14 @@ impl<N: Network> LedgerState<N> {
             _ => Err(anyhow!("Ledger storage state is inconsistent")),
         }
     }
+
+    /// Gracefully shuts down the ledger state.
+    // FIXME: currently only obtains the lock that is used to ensure that map operations
+    // can't be interrupted by a shutdown; the real solution is to use batch writes in
+    // rocksdb.
+    pub fn shut_down(&self) -> Arc<RwLock<()>> {
+        self.blocks.map_lock.clone()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -1087,6 +1098,7 @@ struct BlockState<N: Network> {
     block_headers: DataMap<N::BlockHash, BlockHeader<N>>,
     block_transactions: DataMap<N::BlockHash, Vec<N::TransactionID>>,
     transactions: TransactionState<N>,
+    map_lock: Arc<RwLock<()>>,
 }
 
 impl<N: Network> BlockState<N> {
@@ -1097,6 +1109,7 @@ impl<N: Network> BlockState<N> {
             block_headers: storage.open_map("block_headers")?,
             block_transactions: storage.open_map("block_transactions")?,
             transactions: TransactionState::open(storage)?,
+            map_lock: Default::default(),
         })
     }
 
@@ -1279,6 +1292,9 @@ impl<N: Network> BlockState<N> {
             let transactions = block.transactions();
             let transaction_ids = transactions.transaction_ids().collect::<Vec<_>>();
 
+            // Acquire the map lock to ensure the following operations aren't interrupted by a shutdown.
+            let _map_lock = self.map_lock.read();
+
             // Insert the block height.
             self.block_heights.insert(&block_height, &block_hash)?;
             // Insert the block header.
@@ -1290,6 +1306,8 @@ impl<N: Network> BlockState<N> {
                 let metadata = Metadata::<N>::new(block_height, block_hash, block.timestamp(), index as u16);
                 self.transactions.add_transaction(transaction, metadata)?;
             }
+
+            // The map lock goes out of scope on its own.
 
             Ok(())
         }
@@ -1323,6 +1341,9 @@ impl<N: Network> BlockState<N> {
             // Retrieve the block height.
             let block_height = block_header.height();
 
+            // Acquire the map lock to ensure the following operations aren't interrupted by a shutdown.
+            let _map_lock = self.map_lock.read();
+
             // Remove the block height.
             self.block_heights.remove(&block_height)?;
             // Remove the block header.
@@ -1333,6 +1354,8 @@ impl<N: Network> BlockState<N> {
             for transaction_ids in transaction_ids.iter() {
                 self.transactions.remove_transaction(transaction_ids)?;
             }
+
+            // The map lock goes out of scope on its own.
 
             Ok(())
         }
